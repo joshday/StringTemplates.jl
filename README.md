@@ -14,7 +14,7 @@ using StringInterp
 t = template"I'm going to interpolate two variables, x and y: $x and $y"
 
 
-# `render` with object (uses getproperty) or keyword args to interpolate variables from
+# `render` with object (uses getproperty) or keyword args to interpolate variables
 render(t, (x=1, y=2))
 render(t; x=1, y=2)
 
@@ -23,9 +23,10 @@ render(t; x=1, y=2)
 render(stdout, t; x=1, y=2)
 ```
 
-## Advanced Usage with Custom Printers
+## Custom Printers
 
-- You can provide any function (of `(io::IO, x)`) to print the interpolated variables (default is `Base.print`).
+- You can set a `printer` that determines how variables are interpolated into the template.
+- Default is `Base.print`, but any function of `(io::IO, x)` will work.
 - For example, if your template is based on JSON, you may want to use `JSON3.write` as your printer:
 
 ```julia
@@ -37,7 +38,6 @@ render(t, data=[(; y=1:2)], layout=(;), config=(; responsive=true))
 # "PlotlyJS.newPlot(\"my_id\", "[{"y":[1,2]}]", "{}", "{"responsive":true}")"
 ```
 
--
 
 ## Benchmarks
 
