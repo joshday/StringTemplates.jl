@@ -1,7 +1,7 @@
 name = "StringTemplates"
 uuid = "59c22e0c-4e04-425f-9782-11a552c58a8d"
 authors = ["Josh Day <emailjoshday@gmail.com> and contributors"]
-version = "1.0.0-DEV"
+version = "0.1.0"
 
 [weakdeps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
