@@ -10,32 +10,34 @@
 ```julia
 using StringInterp
 
-# Here's a template.  It looks just like Julia's standard string interpolation syntax.
+# Here's a template.  It uses Julia's interpolation syntax.
 t = template"I'm going to interpolate two variables, x and y: $x and $y"
 
-# The thing is that it's lazy.  The String isn't created until you `render` it.
-# Variables are populated via `getproperty`
-render(t, (x=1, y=2))
 
-# Or you can pass variables as keyword args:
+# Use object (uses getproperty) or keyword args to interpolate variables from
+render(t, (x=1, y=2))
 render(t; x=1, y=2)
 
-# Maybe you don't even want to make the string.  You just want to write to an IO:
-render(stdout, t, (x=1, y=2))  # equivalently render(stdout, t; x=1, y=2)
+
+# Print to IO without allocating String
+render(stdout, t; x=1, y=2)
 ```
 
 ## Advanced Usage with Custom Printers
 
-- You can provide any function to print the interpolated variables (default is `Base.print`).
-- For example, if you're template is based on JSON, you may want to use `JSON3.write` as your printer:
+- You can provide any function (of `(io::IO, x)`) to print the interpolated variables (default is `Base.print`).
+- For example, if your template is based on JSON, you may want to use `JSON3.write` as your printer:
 
 ```julia
 using JSON3
 
 t = @template "PlotlyJS.newPlot(\"my_id\", $data, $layout, $config)" printer=JSON3.write
 
-render(t, data=[(; y=rand(2))], layout=(;), config=(; responsive=true))
+render(t, data=[(; y=1:2)], layout=(;), config=(; responsive=true))
+# "PlotlyJS.newPlot(\"my_id\", "[{"y":[1,2]}]", "{}", "{"responsive":true}")"
 ```
+
+-
 
 ## Benchmarks
 
