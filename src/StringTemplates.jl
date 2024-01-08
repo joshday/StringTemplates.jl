@@ -32,6 +32,7 @@ render(t::Template; @nospecialize(kw...)) = render(t, NamedTuple(kw))
 macro template(e, print=:(Base.print))
     e isa String && return esc(:(StringTemplates.Template(Union{String,Symbol}[$e], $print)))
     parts = Vector{Union{String,Symbol}}(e.args)
+    allunique(filter(x -> x isa Symbol, parts)) || error("Template variable names must be unique.")
     esc(:(StringTemplates.Template($parts, $print)))
 end
 

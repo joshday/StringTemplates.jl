@@ -23,7 +23,7 @@ render(t; x=1, y=2)
 render(stdout, t; x=1, y=2)
 ```
 
-## Custom Printing
+## Customize Printing the Interpolated Values
 
 - You can set any `print` function (default `Base.print`) that takes `(io::IO, x)` arguments.
 - Use the `@template "..." print=Base.print` syntax.
@@ -41,7 +41,7 @@ render(t, data=[(; y=1:2)], layout=(;), config=(; responsive=true))
 
 ## Benchmarks
 
-In our benchmark at `benchmarks/suite.jl` we find that **StringInter** is:
+In our benchmark at `benchmarks/suite.jl` we find that **StringTemplates** is:
 
-- 10.26x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
-- 12.17x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl).
+- 1.9x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
+- 13.6x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl).
