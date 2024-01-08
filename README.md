@@ -27,7 +27,7 @@ render(stdout, t; x=1, y=2)
 
 - You can set a `printer` that determines how variables are interpolated into the template.
 - Default is `Base.print`, but any function of `(io::IO, x)` will work.
-- For example, if your template is based on JSON, you may want to use `JSON3.write` as your printer:
+- For example, if your template is based on JSON, you may want to use `JSON3.write` as your printer.  Notice how you wouldn't be able to create the result with `JSON3.write` directly:
 
 ```julia
 using JSON3
