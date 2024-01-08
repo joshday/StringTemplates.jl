@@ -32,6 +32,7 @@ render(stdout, t; x=1, y=2)
 ```julia
 using JSON3
 
+# A Javascript function that uses JSON arguments
 t = @template "PlotlyJS.newPlot(\"my_id\", $data, $layout, $config)" printer=JSON3.write
 
 render(t, data=[(; y=1:2)], layout=(;), config=(; responsive=true))
