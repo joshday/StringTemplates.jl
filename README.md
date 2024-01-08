@@ -41,7 +41,7 @@ render(t, data=[(; y=1:2)], layout=(;), config=(; responsive=true))
 
 ## Benchmarks
 
-In our benchmark at `benchmarks/suite.jl` we find that **StringTemplates** is:
+In our two benchmarks at `benchmarks/suite.jl` we find that **StringTemplates** is:
 
-- 1.9x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
-- 13.6x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl).
+- 1.9 - 2.6x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
+- 16.5 - 25.3x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl).
