@@ -1,6 +1,6 @@
-# StringInterp
+# StringTemplates
 
-[![Build Status](https://github.com/joshday/StringInterp.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/joshday/StringInterp.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Build Status](https://github.com/joshday/StringTemplates.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/joshday/StringTemplates.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
 
 <p align="center"><b>Speedy customizable string interpolation for Julia.</b></p>
@@ -8,7 +8,7 @@
 ## Usage
 
 ```julia
-using StringInterp
+using StringTemplates
 
 # Here's a template.  It uses Julia's interpolation syntax.
 t = template"I'm going to interpolate two variables, x and y: $x and $y"

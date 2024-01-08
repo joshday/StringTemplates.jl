@@ -1,4 +1,4 @@
-module StringInterp
+module StringTemplates
 
 export @template, @template_str, render
 
@@ -31,14 +31,14 @@ render(t::Template; @nospecialize(kw...)) = render(t, NamedTuple(kw))
 
 #-----------------------------------------------------------------------------# @template
 macro template(e, printer=:print)
-    e isa String && return esc(:(StringInterp.Template(Union{String,Symbol}[$e], $printer)))
+    e isa String && return esc(:(StringTemplates.Template(Union{String,Symbol}[$e], $printer)))
     parts = Vector{Union{String,Symbol}}(e.args)
-    esc(:(StringInterp.Template($parts, $printer)))
+    esc(:(StringTemplates.Template($parts, $printer)))
 end
 
 macro template_str(e)
     arg = Meta.parse(string('"', e, '"'))
-    esc(:(StringInterp.@template $arg))
+    esc(:(StringTemplates.@template $arg))
 end
 
 

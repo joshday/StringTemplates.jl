@@ -2,7 +2,7 @@ import Pkg
 
 Pkg.activate(@__DIR__)
 
-using StringInterp, Mustache, BenchmarkTools
+using StringTemplates, Mustache, BenchmarkTools
 
 
 t = @template """
@@ -65,7 +65,7 @@ m = mt"""
 
 obj = (; (Symbol(letter) => i for (i, letter) in enumerate('a':'z'))...)
 
-b1 = @benchmark StringInterp.render($t, $obj)
+b1 = @benchmark StringTemplates.render($t, $obj)
 
 b2 = @benchmark Mustache.render($m, $(Dict(pairs(obj)...)))
 
@@ -126,7 +126,7 @@ b3 = @benchmark let
     """
 end
 
-println("#-------------------------------------------------------------------------# StringInterp")
+println("#-------------------------------------------------------------------------# StringTemplates")
 display(b1)
 
 println("\n\n")
@@ -145,5 +145,5 @@ println("#----------------------------------------------------------------------
 r = ratio(median(b2), median(b1))
 r2 = ratio(median(b2), median(b3))
 
-@info "In this benchmark, StringInterp is $(round(r.time, digits=2)) times faster than Mustache."
-@info "In this benchmark, StringInterp is $(round(r2.time, digits=2)) times faster than Base string interpolation."
+@info "In this benchmark, StringTemplates is $(round(r.time, digits=2)) times faster than Mustache."
+@info "In this benchmark, StringTemplates is $(round(r2.time, digits=2)) times faster than Base string interpolation."
