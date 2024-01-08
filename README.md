@@ -23,20 +23,19 @@ render(t; x=1, y=2)
 render(stdout, t; x=1, y=2)
 ```
 
-## Custom Printers
+## Custom Printing
 
-- You can set a `printer` that determines how variables are interpolated into the template.
-- Default is `Base.print`, but any function of `(io::IO, x)` will work.
-- For example, if your template is based on JSON, you may want to use `JSON3.write` as your printer.  Notice how you wouldn't be able to create the result with `JSON3.write` directly:
+- You can set any `print` function (default `Base.print`) that takes `(io::IO, x)` arguments.
+- Use the `@template "..." print=Base.print` syntax.
 
 ```julia
 using JSON3
 
-# A Javascript function that uses JSON arguments
-t = @template "PlotlyJS.newPlot(\"my_id\", $data, $layout, $config)" printer=JSON3.write
+# Here's a Javascript function that uses JSON arguments
+t = @template "PlotlyJS.newPlot(\"my_id\", $data, $layout, $config)" print=JSON3.write
 
 render(t, data=[(; y=1:2)], layout=(;), config=(; responsive=true))
-# "PlotlyJS.newPlot(\"my_id\", "[{"y":[1,2]}]", "{}", "{"responsive":true}")"
+# "PlotlyJS.newPlot(\"my_id\", [{\"y\":[1,2]}], {}, {\"responsive\":true})"
 ```
 
 
