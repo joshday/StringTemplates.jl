@@ -14,7 +14,7 @@ using StringInterp
 t = template"I'm going to interpolate two variables, x and y: $x and $y"
 
 
-# Use object (uses getproperty) or keyword args to interpolate variables from
+# `render` with object (uses getproperty) or keyword args to interpolate variables from
 render(t, (x=1, y=2))
 render(t; x=1, y=2)
 
