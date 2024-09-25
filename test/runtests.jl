@@ -16,9 +16,7 @@ t2 = @template "x: $x. y: $y." (io, x) -> print(io, x^2)
 #-----------------------------------------------------------------------------# string macro
 t3 = template"x: $x, y:$y."
 
-t3 = StringTemplates.change_print(t3, (io, x) -> print(io, x^2))
-
-@test render(t3; x=1, y=2) == "x: 1, y:4."
+@test render(t3; x=1, y=2) == "x: 1, y:2."
 
 #-----------------------------------------------------------------------------# Aqua
 Aqua.test_all(StringTemplates; deps_compat=false)

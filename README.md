@@ -8,40 +8,25 @@
 ## Usage
 
 ```julia
-using StringTemplates
+using StringTemplates, JSON3
 
 # Here's a template.  It uses Julia's interpolation syntax.
-t = template"I'm going to interpolate two variables, x and y: $x and $y"
+t = @template "PlotlyJS.newPlot(\"my_id\", $data, {}, {})"
 
+# `render` with anything that has Symbol keys or with keyword arguments
+render(t, data = "[{\"y\": [1, 2]}]")
+# "PlotlyJS.newPlot(\"my_id\", [{\"y\":[1,2]}], {}, {})"
 
-# `render` with object (uses getproperty) or keyword args to interpolate variables
-render(t, (x=1, y=2))
-render(t; x=1, y=2)
+# Alternatively, you can provide a custom print function
+t2 = @template "PlotlyJS.newPlot(\"my_id\", $data, {}, {})" JSON3.write
 
-
-# Print to IO without allocating String
-render(stdout, t; x=1, y=2)
+render(t2, data=[(; y=1:2)])
+# "PlotlyJS.newPlot(\"my_id\", [{\"y\":[1,2]}], {}, {})"
 ```
-
-## Customize Printing the Interpolated Values
-
-- You can set any `print` function (default `Base.print`) that takes `(io::IO, x)` arguments.
-- Use the `@template "..." print=Base.print` syntax.
-
-```julia
-using JSON3
-
-# Here's a Javascript function that uses JSON arguments
-t = @template "PlotlyJS.newPlot(\"my_id\", $data, $layout, $config)" print=JSON3.write
-
-render(t, data=[(; y=1:2)], layout=(;), config=(; responsive=true))
-# "PlotlyJS.newPlot(\"my_id\", [{\"y\":[1,2]}], {}, {\"responsive\":true})"
-```
-
 
 ## Benchmarks
 
 In our two benchmarks at `benchmarks/suite.jl` we find that **StringTemplates** is:
 
-- 1.9 - 2.6x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
-- 16.5 - 25.3x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl).
+- 1.7 - 2.5x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
+- 10.1 - 18.6x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl).

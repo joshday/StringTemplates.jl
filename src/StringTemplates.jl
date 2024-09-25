@@ -15,26 +15,33 @@ function Base.show(io::IO, t::Template)
     end
 end
 
-
-
 props(t::Template) = filter(x -> x isa Symbol, t.parts)
 
-change_print(t::Template, print) = Template(t.parts, print)
-
-check(obj, t::Template) = all(x -> hasproperty(obj, x), props(t))
+check(obj, t::Template) = all(x -> haskey(obj, x), props(t))
 
 function render(io::IO, t::Template, obj)
-    foreach(x -> x isa Symbol ? t.print(io, obj[x]) : print(io, x), t.parts)
+    for x in t.parts
+        if x isa Symbol
+            haskey(obj, x) || throw(ArgumentError("Missing keys: $(join(setdiff(props(t), keys(obj)), ", "))"))
+            t.print(io, obj[x])
+        else
+            print(io, x)
+        end
+    end
 end
-render(t::Template, obj) = sprint(render, t, obj)
 render(io::IO, t::Template; @nospecialize(kw...)) = render(io, t, NamedTuple(kw))
+
+render(t::Template, obj) = sprint(render, t, obj)
 render(t::Template; @nospecialize(kw...)) = render(t, NamedTuple(kw))
 
 #-----------------------------------------------------------------------------# @template
 macro template(e, print=:(Base.print))
-    e isa String && return esc(:(StringTemplates.Template(Union{String,Symbol}[$e], $print)))
-    parts = Vector{Union{String, Symbol}}(e.args)
-    esc(:(StringTemplates.Template($parts, $print)))
+    if e isa String
+        return esc(:(StringTemplates.Template(Union{String,Symbol}[$e], $print)))
+    else
+        parts = Vector{Union{String, Symbol}}(e.args)
+        return esc(:(StringTemplates.Template($parts, $print)))
+    end
 end
 
 macro template_str(e)
