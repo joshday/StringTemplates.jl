@@ -1,0 +1,23 @@
+---
+title: "StringTemplates.jl"
+engine: julia
+---
+
+Welcome to the documentation for **StringTemplates.jl**.
+
+## Overview
+
+StringTemplates.jl is a Julia package that ...
+
+## Installation
+
+```julia
+using Pkg
+Pkg.add("StringTemplates")
+```
+
+## Quickstart
+
+```{julia}
+println("Hello, World!")
+```
