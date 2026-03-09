@@ -25,9 +25,13 @@ function row(st, mu, ba)
     mem_st = "$(BenchmarkTools.prettymemory(m_st.memory)) ($(m_st.allocs))"
     mem_mu = "$(BenchmarkTools.prettymemory(m_mu.memory)) ($(m_mu.allocs))"
     mem_ba = "$(BenchmarkTools.prettymemory(m_ba.memory)) ($(m_ba.allocs))"
-    vs_mu = "$(round(r_mu.time, digits=1))x"
-    vs_ba = "$(round(r_ba.time, digits=1))x"
-    return (; time_st, time_mu, time_ba, mem_st, mem_mu, mem_ba, vs_mu, vs_ba)
+    vs_mu_time = "$(round(r_mu.time, digits=1))x"
+    vs_ba_time = "$(round(r_ba.time, digits=1))x"
+    r_mu_mem = m_st.memory == 0 ? 0.0 : m_st.memory / m_mu.memory
+    r_ba_mem = m_st.memory == 0 ? 0.0 : m_st.memory / m_ba.memory
+    vs_mu_mem = "$(round(r_mu_mem, digits=1))x"
+    vs_ba_mem = "$(round(r_ba_mem, digits=1))x"
+    return (; time_st, time_mu, time_ba, mem_st, mem_mu, mem_ba, vs_mu_time, vs_ba_time, vs_mu_mem, vs_ba_mem)
 end
 
 #==============================================================================#
@@ -143,17 +147,17 @@ open(joinpath(@__DIR__, "report.md"), "w") do io
     println(io, "| Benchmark | StringTemplates | Mustache | Base | vs Mustache | vs Base |")
     println(io, "|:----------|----------------:|---------:|-----:|------------:|--------:|")
     for (label, r) in zip(labels, rows)
-        println(io, "| $label | $(r.time_st) | $(r.time_mu) | $(r.time_ba) | $(r.vs_mu) | $(r.vs_ba) |")
+        println(io, "| $label | $(r.time_st) | $(r.time_mu) | $(r.time_ba) | $(r.vs_mu_time) | $(r.vs_ba_time) |")
     end
     println(io)
 
     # Memory comparison table
     println(io, "## Memory (bytes and allocations)")
     println(io)
-    println(io, "| Benchmark | StringTemplates | Mustache | Base |")
-    println(io, "|:----------|----------------:|---------:|-----:|")
+    println(io, "| Benchmark | StringTemplates | Mustache | Base | vs Mustache | vs Base |")
+    println(io, "|:----------|----------------:|---------:|-----:|------------:|--------:|")
     for (label, r) in zip(labels, rows)
-        println(io, "| $label | $(r.mem_st) | $(r.mem_mu) | $(r.mem_ba) |")
+        println(io, "| $label | $(r.mem_st) | $(r.mem_mu) | $(r.mem_ba) | $(r.vs_mu_mem) | $(r.vs_ba_mem) |")
     end
 end
 
