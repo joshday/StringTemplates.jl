@@ -13,7 +13,7 @@
   - 53 - 204x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl) (v1.1).
 - Use any function of `(io, item)` to define the interpolation:
   - E.g. a JSON template can use `JSON.json`. 
-  - E.g. an HTML template can use `(io, x) -> print(io, repr("application/json", x))`. 
+  - E.g. an HTML template can use `(io, x) -> print(io, repr("text/html", x))`. 
 - Type checks on variables.
 
 
