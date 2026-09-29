@@ -6,6 +6,17 @@
 
 <p align="center"><b>Speedy customizable string interpolation for Julia.</b></p>
 
+## Features
+
+- Performance (see `benchmarks/suite.jl` and its output `benchmarks/report.md`):
+  - 1.0 - 5.1x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
+  - 53 - 204x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl) (v1.1).
+- Use any function of `(io, item)` to define the interpolation:
+  - E.g. a JSON template can use `JSON.json`. 
+  - E.g. an HTML template can use `(io, x) -> print(io, repr("application/json", x))`. 
+- Type checks on variables.
+
+
 ## Usage
 
 ```julia
@@ -30,10 +41,3 @@ t3 = @template "x = $(x::Int)"
 render(t3, x=1)
 # "x = 1"
 ```
-
-## Benchmarks
-
-In the benchmarks at `benchmarks/suite.jl` (see `benchmarks/report.md`, Julia 1.13) we find that **StringTemplates** is:
-
-- 1.0 - 5.1x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
-- 53 - 204x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl) (v1.1).
