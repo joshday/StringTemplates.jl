@@ -1,6 +1,7 @@
 # StringTemplates
 
 [![Build Status](https://github.com/joshday/StringTemplates.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/joshday/StringTemplates.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/joshday/StringTemplates.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/joshday/StringTemplates.jl)
 
 
 <p align="center"><b>Speedy customizable string interpolation for Julia.</b></p>
@@ -22,11 +23,17 @@ t2 = @template "PlotlyJS.newPlot(\"my_id\", $data, {}, {})" JSON3.write
 
 render(t2, data=[(; y=1:2)])
 # "PlotlyJS.newPlot(\"my_id\", [{\"y\":[1,2]}], {}, {})"
+
+# Properties can be typed with `$(name::T)`.  Values are checked against the type
+t3 = @template "x = $(x::Int)"
+
+render(t3, x=1)
+# "x = 1"
 ```
 
 ## Benchmarks
 
-In our two benchmarks at `benchmarks/suite.jl` we find that **StringTemplates** is:
+In the benchmarks at `benchmarks/suite.jl` (see `benchmarks/report.md`, Julia 1.13) we find that **StringTemplates** is:
 
-- 1.7 - 2.5x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
-- 10.1 - 18.6x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl).
+- 1.0 - 5.1x faster than [Base string interpolation](https://docs.julialang.org/en/v1/manual/strings/#string-interpolation).
+- 53 - 204x faster than [Mustache.jl](https://github.com/jverzani/Mustache.jl) (v1.1).

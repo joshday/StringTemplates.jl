@@ -53,7 +53,7 @@ ba1 = @benchmark string("x: ", $(obj_int.a), ", y: ", $(obj_int.b), ".")
 @info "Benchmark 2: Mostly-static template (2 vars in lots of text, string return)"
 
 static_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-st_mostly_static = StringTemplates.Template(Union{String,Symbol}[static_text, " Name: ", :name, ". ", static_text, " Age: ", :age, ". ", static_text], print)
+st_mostly_static = StringTemplates.Template((static_text, " Name: ", StringTemplates.Property(:name), ". ", static_text, " Age: ", StringTemplates.Property(:age), ". ", static_text), print)
 mu_mostly_static = Mustache.mt"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  Name: {{name}}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  Age: {{age}}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
 
 d_mostly_static = Dict(:name => "Alice", :age => 30)
