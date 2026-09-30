@@ -5,15 +5,17 @@ export Template, Variable, render, @template
 using StyledStrings
 
 #------------------------------------------------------------------------------# Variable
-struct Variable{name, type, F}
+struct Variable{name, T, F}
     print::F
 end
-Variable{name, T}(f) where {name, T} = Variable{name, T, typeof(f)}(f)
-name(::Variable{n}) where {n} = n
-type(::Variable{n, T}) where {n, T} = T
+name(::Variable{N,T,F}) where {N,T,F} = N
+type(::Variable{N,T,F}) where {N,T,F} = T
 
-function Base.show(io::IO, v::Variable{name, type, F}) where {name, type, F}
-    print(io, styled"{bright_cyan:\$($name::$type|$(v.print))}")
+Variable{name, T}(f) where {name, T} = Variable{name, T, typeof(f)}(f)
+
+function Base.show(io::IO, v::Variable{name, T, F}) where {name, T, F}
+    s = string(name, T === Any ? "" : "::$T", v.print === print ? "" : "|$(v.print)")
+    print(io, styled"{bright_cyan:\$($s)}")
 end
 
 #------------------------------------------------------------------------------# Template
@@ -21,56 +23,49 @@ struct Template{T <: Tuple}
     parts::T
 end
 
-Base.show(io::IO, t::Template) = foreach(p -> print(io, p isa String ? styled"{gray:$p}" : p), t.parts)
+Base.show(io::IO, t::Template) = foreach(p -> print(io, p isa AbstractString ? styled"{gray:$p}" : p), t.parts)
 
-# `foreach` over a tuple, unrolled for any length (Base only unrolls tuples up to 32 elements)
-@generated function unrolled_foreach(f, t::Tuple)
-    quote
-        Base.Cartesian.@nexprs $(fieldcount(t)) i -> f(t[i])
-        nothing
-    end
-end
-
-# `sum(f, t)`, unrolled for any length
-@generated unrolled_sum(f, t::Tuple) = foldl((a, i) -> :($a + f(t[$i])), 1:fieldcount(t); init=0)
+# `map` over a tuple, unrolled for any length (Base only unrolls tuples up to 32 elements)
+@generated tmap(f, t::Tuple) = :(($(map(i -> :(f(t[$i])), 1:fieldcount(t))...),))
 
 #------------------------------------------------------------------------------# check
 valid(::AbstractString, x) = true
-valid(v::Variable, x) = hasproperty(x, name(v)) && getproperty(x, name(v)) isa type(v)
+valid(::Variable{name,T,F}, x) where {name,T,F} = hasproperty(x, name) && getproperty(x, name) isa T
 
 # Throws if any variable is missing or has the wrong type.  Allocates nothing unless it throws.
-check(t::Template, x) = unrolled_foreach(p -> valid(p, x) || throw_invalid(t, x), t.parts)
+check(t::Template, x) = all(tmap(p -> valid(p, x), t.parts)) || throw_invalid(t, x)
 
 @noinline function throw_invalid(t::Template, x)
-    msg = join(map(v -> problem(v, x), unique(filter(p -> !valid(p, x), collect(t.parts)))), ", ")
-    throw(ArgumentError(styled"$msg.  Available properties: $(propertynames(x))"))
+    idx = findall(tmap(p -> !valid(p, x), t.parts))
+    msg = join(unique(problem.(t.parts[idx], Ref(x))), ", ")
+    throw(ArgumentError(styled"$msg.  Available properties: {bright_yellow:$(propertynames(x))}"))
 end
 
-problem(v::Variable, x) = hasproperty(x, name(v)) ?
-    styled"{red:$(name(v))::$(type(v))} (got $(typeof(getproperty(x, name(v)))))" :
-    styled"{red:$(name(v))} not found"
+problem(v::Variable{name,T,F}, x) where {name,T,F} = hasproperty(x, name) ?
+    styled"{bright_red:$(name)::$(T)} (got $(typeof(getproperty(x, name))))" :
+    styled"{bright_red:$(name)} not found"
 
 #------------------------------------------------------------------------------# render
 value(s::AbstractString, x) = s
-value(v::Variable, x) = getproperty(x, name(v))
+value(::Variable{name,T,F}, x) where {name,T,F} = getproperty(x, name)
 
 render(io::IO, s::AbstractString, x) = print(io, s)
 render(io::IO, v::Variable, x) = v.print(io, value(v, x))
 
-# Every variable is checked before anything is written
 function render(io::IO, t::Template, x)
     check(t, x)
-    unrolled_foreach(p -> render(io, p, x), t.parts)
+    tmap(p -> render(io, p, x), t.parts)
+    return nothing
 end
 
-# Estimated bytes written for a value (used to size the output buffer)
+# Estimated bytes for IOBuffer sizehint
 nbytes(s::AbstractString) = sizeof(s)
 nbytes(x) = 8
 
 function render(t::Template, x)
     check(t, x)
-    io = IOBuffer(; sizehint=unrolled_sum(p -> nbytes(value(p, x)), t.parts))
-    unrolled_foreach(p -> render(io, p, x), t.parts)
+    io = IOBuffer(; sizehint=sum(tmap(p -> nbytes(value(p, x)), t.parts); init=0))
+    render(io, t, x)
     return String(take!(io))
 end
 
@@ -78,8 +73,6 @@ end
 # Does `x` fill in part `p`?
 fills(x, p) = p isa Variable && hasproperty(x, name(p))
 
-# A new template with the variables found in `x` rendered into strings and the rest kept.
-# Satisfies `render(Template(t, a), b) == render(t, merge(a, b))`.
 function Template(t::Template, x)
     check(Template(filter(p -> fills(x, p), t.parts)), x)  # type-check the values being filled in
     return Template(merge_strings(map(p -> fills(x, p) ? sprint(render, p, x) : p, t.parts)))

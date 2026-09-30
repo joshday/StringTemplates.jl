@@ -1,5 +1,5 @@
 using StringTemplates
-using StringTemplates: check, name, type
+using StringTemplates: check, type
 using Test
 using Aqua
 
@@ -22,7 +22,7 @@ end
 @test str(Template(("a ", V(:x), " again ", V(:x))), (; x=1)) == "a 1 again 1"
 
 #-----------------------------------------------------------------------------# Variable
-@test name(V(:x, Int)) === :x
+@test StringTemplates.name(V(:x, Int)) === :x
 @test Variable{:x, Int}(print) === Variable{:x, Int, typeof(print)}(print)
 @test type(V(:x, Int)) === Int
 
@@ -36,8 +36,8 @@ end
 t2 = Template(("a: ", V(:a), ", b: ", V(:b, Int), ", c: ", V(:c), ", d: ", V(:d, AbstractString)))
 
 @test str(t2, (; a=1, b=2, c=3, d="4")) == "a: 1, b: 2, c: 3, d: 4"
-@test check(t2, (; a=1, b=2, c=3, d="4")) === nothing
-@test check(t2, NamedTuple{(:a, :b, :c, :d), NTuple{4, Any}}((1, 2, 3, "4"))) === nothing  # checked per value
+@test check(t2, (; a=1, b=2, c=3, d="4"))
+@test check(t2, NamedTuple{(:a, :b, :c, :d), NTuple{4, Any}}((1, 2, 3, "4")))  # checked per value
 @test_throws ArgumentError check(t2, (; a=1, b=2.0, c=3, d="4"))
 @test_throws ArgumentError check(t2, (; a=1, b=2, c=3))
 
@@ -81,7 +81,7 @@ end
 @test (@template "a: $(a::Int), b: $(b|brackets), c: $(c::String|brackets)").parts ==
     ("a: ", V(:a, Int), ", b: ", V(:b, Any, brackets), ", c: ", V(:c, String, brackets))
 @test render(@template("$a $(b|brackets)", (io, x) -> print(io, -x)), (; a=1, b=2)) == "-1 <2>"  # default print
-@test render(@template("$(x|((io, v) -> print(io, v, v)))"), (; x=1)) == "11"  # anonymous functions need parentheses
+@test render(@template("$(x|(io, v) -> print(io, v, v))"), (; x=1)) == "11"  # anonymous function
 let t = @template "$a $b" (io, x) -> print(io, x)
     @test t.parts[1].print === t.parts[3].print  # the default print is evaluated once
 end
@@ -96,8 +96,13 @@ make() = @template "a: $(a::Int|brackets)"
 @test_throws Exception macroexpand(@__MODULE__, :(@template "a $(x.y::Int)"))
 
 #-----------------------------------------------------------------------------# show
-@test sprint(show, V(:x, Int)) == "\$(x::$Int|print)"
-@test sprint(show, t) == "x: \$(x::Any|print). y: \$(y::Any|print)."
+# shown in `@template` syntax
+@test sprint(show, V(:x)) == "\$(x)"
+@test sprint(show, V(:x, Int)) == "\$(x::$Int)"
+@test sprint(show, V(:x, Any, brackets)) == "\$(x|brackets)"
+@test sprint(show, V(:x, Int, brackets)) == "\$(x::$Int|brackets)"
+@test sprint(show, t) == "x: \$(x). y: \$(y)."
+@test sprint(show, @template "a $(x)! $(y::Int|brackets)") == "a \$(x)! \$(y::$Int|brackets)"
 
 #-----------------------------------------------------------------------------# performance
 long = Template(Tuple(map(i -> iseven(i) ? V(Symbol(:x, i)) : "-", 1:61)))  # > 32 parts
@@ -108,7 +113,7 @@ long_obj = (; map(i -> Symbol(:x, i) => string(i), 2:2:61)...)
 @inferred check(long, long_obj)
 @inferred render(IOBuffer(), long, long_obj)
 @inferred render(long, long_obj)
-let n = StringTemplates.unrolled_sum(p -> StringTemplates.nbytes(StringTemplates.value(p, long_obj)), long.parts)
+let n = sum(StringTemplates.tmap(p -> StringTemplates.nbytes(StringTemplates.value(p, long_obj)), long.parts))
     @test n == sizeof(render(long, long_obj))  # exact for string values
 end
 let io = IOBuffer(; sizehint=1000)
