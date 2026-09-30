@@ -14,7 +14,7 @@
 - Julia's string interpolation syntax: `@template "Hello, $(name)!"`.
 - Each variable is printed with its own function of `(io, value)`:
   - E.g. a JSON template can use `JSON3.write`.
-  - E.g. an HTML template can use `(io, x) -> print(io, repr("text/html", x))`.
+  - E.g. an HTML template can use `(io, x) -> show(io, MIME("text/html"), x)`.
 - Type checks on variables, before anything is written.
 - Works with any object that has properties: `NamedTuple`s and structs.
 
