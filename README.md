@@ -26,7 +26,7 @@ t = @template("""
 
     The `@template` macro creates a `Template` with variables defined by \$.
 
-    There are three "inteprolation" methods:
+    You can define variables with optional type annotations and print function:
 
     - `\$var`: $var 
     - `\$typed_var`: $(typed_var::Int)
@@ -47,13 +47,13 @@ render(t, x)
 ### Result:
 
 > # How to use StringTemplates
->
+> 
 > The `@template` macro creates a `Template` with variables defined by $.
->
-> There are three "inteprolation" methods:
->
+> 
+> You can define variables with optional type annotations and print function:
+> 
 > - `$var`: I'm a variable!
 > - `$typed_var`: 10
->- `$var_with_print`: I WILL PRINT IN UPPERCASE.
->
+> - `$var_with_print`: I WILL PRINT IN UPPERCASE.
+> 
 > You can fill in the blanks with any `x`'s properties using `render([io], t::Template, x)`
