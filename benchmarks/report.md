@@ -1,6 +1,6 @@
 # StringTemplates.jl Benchmark Report
 
-Generated: 2026-09-29T09:56:48.233
+Generated: 2026-09-30T04:35:34.804
 
 ```
 Julia Version 1.13.1
@@ -22,12 +22,12 @@ Environment:
 
 | Benchmark | StringTemplates | Mustache | Base | vs Mustache | vs Base |
 |:----------|----------------:|---------:|-----:|------------:|--------:|
-| Small (2 vars, string return) | 128.527 ns | 7.177 μs | 278.523 ns | 55.8x | 2.2x |
-| Mostly-static (2 vars in text, string return) | 139.487 ns | 7.365 μs | 382.182 ns | 52.8x | 2.7x |
-| Many vars, int values (string return) | 1.179 μs | 89.167 μs | 3.521 μs | 75.6x | 3.0x |
-| Many vars, string values (string return) | 471.515 ns | 91.209 μs | 2.403 μs | 193.4x | 5.1x |
-| Many vars, int values (IO write) | 1.204 μs | 89.167 μs | 1.908 μs | 74.0x | 1.6x |
-| Many vars, string values (IO write) | 447.394 ns | 91.250 μs | 456.853 ns | 204.0x | 1.0x |
+| Small (2 vars, string return) | 130.959 ns | 7.219 μs | 285.042 ns | 55.1x | 2.2x |
+| Mostly-static (2 vars in text, string return) | 145.809 ns | 7.333 μs | 394.911 ns | 50.3x | 2.7x |
+| Many vars, int values (string return) | 1.192 μs | 89.125 μs | 3.531 μs | 74.8x | 3.0x |
+| Many vars, string values (string return) | 472.362 ns | 91.750 μs | 2.403 μs | 194.2x | 5.1x |
+| Many vars, int values (IO write) | 1.200 μs | 89.459 μs | 1.904 μs | 74.5x | 1.6x |
+| Many vars, string values (IO write) | 446.970 ns | 90.834 μs | 456.853 ns | 203.2x | 1.0x |
 
 ## Memory (bytes and allocations)
 

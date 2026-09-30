@@ -1,7 +1,7 @@
 name = "StringTemplates"
 uuid = "59c22e0c-4e04-425f-9782-11a552c58a8d"
 authors = ["Josh Day <emailjoshday@gmail.com> and contributors"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 StyledStrings = "f489334b-da3d-4c2e-b8f0-e476e12c162b"

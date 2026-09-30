@@ -13,6 +13,8 @@ obj_str = (; (Symbol(letter) => letter ^ i for (i, letter) in enumerate('a':'z')
 #==============================================================================#
 # Helpers
 #==============================================================================#
+var(name) = Variable{name, Any}(print)
+
 function row(st, mu, ba)
     m_st = minimum(st)
     m_mu = minimum(mu)
@@ -39,7 +41,7 @@ end
 #==============================================================================#
 @info "Benchmark 1: Small template (2 vars, string return)"
 
-t_small = template"x: $a, y: $b."
+t_small = Template(("x: ", var(:a), ", y: ", var(:b), "."))
 m_small = Mustache.mt"x: {{a}}, y: {{b}}."
 d_small = Dict(:a => 1, :b => 2)
 
@@ -53,7 +55,7 @@ ba1 = @benchmark string("x: ", $(obj_int.a), ", y: ", $(obj_int.b), ".")
 @info "Benchmark 2: Mostly-static template (2 vars in lots of text, string return)"
 
 static_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-st_mostly_static = StringTemplates.Template((static_text, " Name: ", StringTemplates.Property(:name), ". ", static_text, " Age: ", StringTemplates.Property(:age), ". ", static_text), print)
+st_mostly_static = Template((static_text, " Name: ", var(:name), ". ", static_text, " Age: ", var(:age), ". ", static_text))
 mu_mostly_static = Mustache.mt"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  Name: {{name}}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.  Age: {{age}}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
 
 d_mostly_static = Dict(:name => "Alice", :age => 30)
@@ -68,7 +70,8 @@ ba2 = @benchmark string($static_text, " Name: ", "Alice", ". ", $static_text, " 
 #==============================================================================#
 @info "Benchmark 3: Many variables, int values (string return)"
 
-t_many = template"Here is a: $a. Here is b: $b. Here is c: $c. Here is d: $d. Here is e: $e. Here is f: $f. Here is g: $g. Here is h: $h. Here is i: $i. Here is j: $j. Here is k: $k. Here is l: $l. Here is m: $m. Here is n: $n. Here is o: $o. Here is p: $p. Here is q: $q. Here is r: $r. Here is s: $s. Here is t: $t. Here is u: $u. Here is v: $v. Here is w: $w. Here is x: $x. Here is y: $y. Here is z: $z."
+# "Here is a: $a. Here is b: $b. ... Here is z: $z."
+t_many = Template((Iterators.flatten(map(c -> (c == 'a' ? "Here is a: " : ". Here is $c: ", var(Symbol(c))), 'a':'z'))..., "."))
 m_many = Mustache.mt"Here is a: {{a}}. Here is b: {{b}}. Here is c: {{c}}. Here is d: {{d}}. Here is e: {{e}}. Here is f: {{f}}. Here is g: {{g}}. Here is h: {{h}}. Here is i: {{i}}. Here is j: {{j}}. Here is k: {{k}}. Here is l: {{l}}. Here is m: {{m}}. Here is n: {{n}}. Here is o: {{o}}. Here is p: {{p}}. Here is q: {{q}}. Here is r: {{r}}. Here is s: {{s}}. Here is t: {{t}}. Here is u: {{u}}. Here is v: {{v}}. Here is w: {{w}}. Here is x: {{x}}. Here is y: {{y}}. Here is z: {{z}}."
 
 d_int = Dict(pairs(obj_int)...)

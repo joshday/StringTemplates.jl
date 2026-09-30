@@ -1,114 +1,115 @@
 module StringTemplates
 
-using StyledStrings: @styled_str
+export Template, Variable, render, @template
 
-export @template, @template_str, render
+using StyledStrings
 
-#------------------------------------------------------------------------------# Property
-# `name` and `T` are type parameters so `render` can resolve lookups (and printing) at compile time
-struct Property{name, T} end
-Property(name::Symbol, T::Type=Any) = Property{name, T}()
+#------------------------------------------------------------------------------# Variable
+struct Variable{name, type, F}
+    print::F
+end
+Variable{name, T}(f) where {name, T} = Variable{name, T, typeof(f)}(f)
+name(::Variable{n}) where {n} = n
+type(::Variable{n, T}) where {n, T} = T
 
-Base.nameof(::Property{name}) where {name} = name
-
-function Base.show(io::IO, ::Property{name, T}) where {name, T}
-    T === Any ? print(io, '$', name) : print(io, "\$(", name, "::", T, ')')
+function Base.show(io::IO, v::Variable{name, type, F}) where {name, type, F}
+    print(io, styled"{bright_cyan:\$($name::$type|$(v.print))}")
 end
 
 #------------------------------------------------------------------------------# Template
-@kwdef struct Template{S <: Tuple{Vararg{Union{AbstractString, Property}}}, P <: Base.Callable}
-    parts::S = ()
-    print::P = Base.print
+struct Template{T <: Tuple}
+    parts::T
 end
-Template(parts::AbstractVector, print=Base.print) = Template(Tuple(parts), print)
 
-function Base.show(io::IO, t::Template)
-    foreach(t.parts) do x
-        print(io, styled"{$(x isa AbstractString ? :gray : :bright_green):$x}")
+Base.show(io::IO, t::Template) = foreach(p -> print(io, p isa String ? styled"{gray:$p}" : p), t.parts)
+
+# `foreach` over a tuple, unrolled for any length (Base only unrolls tuples up to 32 elements)
+@generated function unrolled_foreach(f, t::Tuple)
+    quote
+        Base.Cartesian.@nexprs $(fieldcount(t)) i -> f(t[i])
+        nothing
     end
 end
 
-props(t::Template) = filter(x -> x isa Property, t.parts)
+# `sum(f, t)`, unrolled for any length
+@generated unrolled_sum(f, t::Tuple) = foldl((a, i) -> :($a + f(t[$i])), 1:fieldcount(t); init=0)
 
-check(obj, t::Template) = all(p -> valid(obj, p), props(t))
+#------------------------------------------------------------------------------# check
+valid(::AbstractString, x) = true
+valid(v::Variable, x) = hasproperty(x, name(v)) && getproperty(x, name(v)) isa type(v)
 
-#------------------------------------------------------------------------------# lookup
-struct NotFound end
+# Throws if any variable is missing or has the wrong type.  Allocates nothing unless it throws.
+check(t::Template, x) = unrolled_foreach(p -> valid(p, x) || throw_invalid(t, x), t.parts)
 
-lookup(obj::NamedTuple, name::Symbol) = haskey(obj, name) ? getfield(obj, name) : NotFound()
-lookup(obj::AbstractDict, name::Symbol) = get(obj, name, NotFound())
-lookup(obj, name::Symbol) = haskey(obj, name) ? obj[name] : NotFound()
-
-function valid(obj, ::Property{name, T}) where {name, T}
-    x = lookup(obj, name)
-    return !(x isa NotFound) && x isa T
+@noinline function throw_invalid(t::Template, x)
+    msg = join(map(v -> problem(v, x), unique(filter(p -> !valid(p, x), collect(t.parts)))), ", ")
+    throw(ArgumentError(styled"$msg.  Available properties: $(propertynames(x))"))
 end
 
-@noinline function throw_missing(t::Template, obj)
-    names = unique(map(nameof, filter(p -> lookup(obj, nameof(p)) isa NotFound, props(t))))
-    throw(ArgumentError("Missing keys: $(join(names, ", "))"))
-end
-
-# What gets printed for each part.  Throws if a key is missing or a value has the wrong type.
-value(t::Template, obj, s::AbstractString) = s
-function value(t::Template, obj, ::Property{name, T}) where {name, T}
-    x = lookup(obj, name)
-    x isa NotFound && throw_missing(t, obj)
-    x isa T || throw(TypeError(:render, "property `$name`", T, x))
-    return x
-end
+problem(v::Variable, x) = hasproperty(x, name(v)) ?
+    styled"{red:$(name(v))::$(type(v))} (got $(typeof(getproperty(x, name(v)))))" :
+    styled"{red:$(name(v))} not found"
 
 #------------------------------------------------------------------------------# render
-estimate_size(s::AbstractString) = sizeof(s)
-estimate_size(x) = 8
+value(s::AbstractString, x) = s
+value(v::Variable, x) = getproperty(x, name(v))
 
-# Unrolled so every part is type-stable (`map`/`foreach` on a Tuple are only unrolled up to 32 elements).
-# All values are looked up before anything is written.  The body only depends on the number of parts.
-function render_body(n::Int; tostring::Bool)
-    x = map(i -> Symbol(:x, i), 1:n)
-    lookups = map(i -> :($(x[i]) = value(t, obj, t.parts[$i])), 1:n)
-    prints = map(i -> :(t.parts[$i] isa Property ? t.print(io, $(x[i])) : print(io, $(x[i]))), 1:n)
-    tostring || return Expr(:block, lookups..., prints..., nothing)
-    # binary `+` chain: a long varargs `+` call isn't specialized
-    sizehint = foldl((a, b) -> :($a + $b), map(i -> :(estimate_size($(x[i]))), 1:n); init=0)
-    return Expr(:block, lookups..., :(io = IOBuffer(; sizehint=$sizehint)), prints..., :(String(take!(io))))
+render(io::IO, s::AbstractString, x) = print(io, s)
+render(io::IO, v::Variable, x) = v.print(io, value(v, x))
+
+# Every variable is checked before anything is written
+function render(io::IO, t::Template, x)
+    check(t, x)
+    unrolled_foreach(p -> render(io, p, x), t.parts)
 end
 
-@generated render(io::IO, t::Template{S}, obj) where {S} = render_body(fieldcount(S); tostring=false)
-render(io::IO, t::Template; kw...) = render(io, t, values(kw))
+# Estimated bytes written for a value (used to size the output buffer)
+nbytes(s::AbstractString) = sizeof(s)
+nbytes(x) = 8
 
-@generated render(t::Template{S}, obj) where {S} = render_body(fieldcount(S); tostring=true)
-render(t::Template; kw...) = render(t, values(kw))
+function render(t::Template, x)
+    check(t, x)
+    io = IOBuffer(; sizehint=unrolled_sum(p -> nbytes(value(p, x)), t.parts))
+    unrolled_foreach(p -> render(io, p, x), t.parts)
+    return String(take!(io))
+end
+
+#------------------------------------------------------------------------------# partial fill
+# Does `x` fill in part `p`?
+fills(x, p) = p isa Variable && hasproperty(x, name(p))
+
+# A new template with the variables found in `x` rendered into strings and the rest kept.
+# Satisfies `render(Template(t, a), b) == render(t, merge(a, b))`.
+function Template(t::Template, x)
+    check(Template(filter(p -> fills(x, p), t.parts)), x)  # type-check the values being filled in
+    return Template(merge_strings(map(p -> fills(x, p) ? sprint(render, p, x) : p, t.parts)))
+end
+
+# Join adjacent strings, e.g. ("a", "b", v) → ("ab", v)
+function merge_strings(parts::Tuple)
+    out = Any[]
+    foreach(parts) do p
+        p isa AbstractString && !isempty(out) && last(out) isa AbstractString ? (out[end] *= p) : push!(out, p)
+    end
+    return Tuple(out)
+end
 
 #------------------------------------------------------------------------------# @template
+# `@template "a $x $(y::T) $(z|f) $(w::T|f)" [print]`: `f(io, value)` prints a variable (default `print`)
 macro template(ex, print=:(Base.print))
-    template_expr(ex, print)
-end
-
-macro template_str(s)
-    template_expr(Meta.parse(string("\"\"\"", s, "\"\"\"")), :(Base.print))
-end
-
-function template_expr(ex, print)
-    parts = ex isa AbstractString ? [ex] :
-        Meta.isexpr(ex, :string) ? ex.args :
+    parts = ex isa String ? (ex,) : Meta.isexpr(ex, :string) ? ex.args :
         throw(ArgumentError("@template expects a string literal.  Got: `$ex`"))
-    return esc(:($Template(($(map(template_part, parts)...),), $print)))
+    p = gensym(:print)  # evaluated once, for the variables without their own `|f`
+    return esc(:(let $p = $print; $Template(($(map(x -> template_part(x, p), parts)...),)) end))
 end
 
-template_part(x::AbstractString) = x
-template_part(x::Symbol) = :($Property{$(QuoteNode(x)), Any}())
-function template_part(x)
-    Meta.isexpr(x, :(::), 2) && x.args[1] isa Symbol ||
-        throw(ArgumentError("Only `\$name` and `\$(name::T)` interpolation is supported.  Got: `\$($x)`"))
-    return :($Property{$(QuoteNode(x.args[1])), $(x.args[2])}())
-end
-
-#------------------------------------------------------------------------------# precompile
-let t = @template "x = $x"
-    render(t; x=1)
-    render(t, Dict(:x => "1"))
-    render(IOBuffer(), t; x=1)
+template_part(s::String, print) = s
+function template_part(x, print)
+    # `::` binds tighter than `|`, so `name::T|f` parses as `(name::T) | f`
+    (ex, f) = Meta.isexpr(x, :call, 3) && x.args[1] === :| ? x.args[2:3] : (x, print)
+    (name, T) = ex isa Symbol ? (ex, Any) : Meta.isexpr(ex, :(::), 2) ? ex.args : (nothing, nothing)
+    name isa Symbol || throw(ArgumentError("Only `\$name`, `\$(name::T)`, `\$(name|f)`, and `\$(name::T|f)` are supported.  Got: `\$($x)`"))
+    return :($Variable{$(QuoteNode(name)), $T}($f))
 end
 
 end  # module
